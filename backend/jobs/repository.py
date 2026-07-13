@@ -46,7 +46,6 @@ class JobRepository(ABC):
         """Apply a partial update to a job and return the updated job, or
         None if it doesn't exist."""
 
-
 class InMemoryJobRepository(JobRepository):
     """Default in-process implementation, keyed by job id in a dict."""
 
@@ -76,7 +75,6 @@ class InMemoryJobRepository(JobRepository):
             updated = job.model_copy(update=fields)
             self._jobs[job_id] = updated
             return updated
-
 
 # Single place to swap storage backends, e.g.:
 #   job_repository: JobRepository = PostgresJobRepository(dsn=os.environ["DATABASE_URL"])

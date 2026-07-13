@@ -58,6 +58,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from options.repository import options_repository
 from jobs.repository import JobStoreFullError, job_repository
 from jobs.store import DeploymentConfig, Job, JobOutputs, JobPlan
 from terraform import generator, runner
@@ -195,7 +196,6 @@ async def create_deployment(config: DeploymentConfig):
 async def list_deployments():
     return await job_repository.list_all()
 
-
 @app.get("/api/deployments/{job_id}", response_model=Job, response_model_exclude_none=True)
 async def get_deployment(job_id: str):
     _require_valid_job_id(job_id)
@@ -204,7 +204,10 @@ async def get_deployment(job_id: str):
         raise HTTPException(status_code=404, detail="Job not found")
     return job
 
-
+@app.get("/api/options")
+async def send_options():
+    return await options_repository.get_options()
+    
 @app.post(
     "/api/deployments/{job_id}/apply",
     response_model=Job,
