@@ -93,28 +93,30 @@ export function DeploymentList({ onSelectJob }: DeploymentListProps) {
               className={`job-card ${isDestroyed ? 'job-card-disabled' : ''}`}
               onClick={() => !isDestroyed && onSelectJob(job.id)}
             >
-              <div className="job-card-top">
-                <span className="job-id">#{job.id.slice(0, 8)}</span>
-                <span className={`status-badge status-badge-${job.status}`}>{STATUS_LABEL[job.status]}</span>
+            <div className="job-card-body">
+              <div className="job-card-field">
+                <span className="job-card-label">VM</span>
+                <span>{job.config.virtualMachine.name}</span>
               </div>
-              <div className="job-card-body">
-                <div className="job-card-field">
-                  <span className="job-card-label">Název</span>
-                  <span>{job.config.name}</span>
-                </div>
-                <div className="job-card-field">
-                  <span className="job-card-label">Region</span>
-                  <span>{job.config.region}</span>
-                </div>
-                <div className="job-card-field">
-                  <span className="job-card-label">Velikost</span>
-                  <span>{job.config.size}</span>
-                </div>
-                <div className="job-card-field">
-                  <span className="job-card-label">Image</span>
-                  <span>{job.config.image}</span>
-                </div>
+              <div className="job-card-field">
+                <span className="job-card-label">OS</span>
+                <span>{job.config.virtualMachine.os}</span>
               </div>
+              <div className="job-card-field">
+                <span className="job-card-label">Zdroje</span>
+                <span>
+                  {job.config.virtualMachine.cpu} vCPU / {job.config.virtualMachine.ram} GB / {job.config.virtualMachine.disk} GB
+                </span>
+              </div>
+              <div className="job-card-field">
+                <span className="job-card-label">Síť</span>
+                <span>{job.config.networkConnection.name}</span>
+              </div>
+              <div className="job-card-field">
+                <span className="job-card-label">IP</span>
+                <span>{job.outputs?.ip || '—'}</span>
+              </div>
+            </div>
               <div className="job-card-footer">
                 <span className="job-card-time">
                   {job.createdAt ? new Date(job.createdAt).toLocaleString() : ''}

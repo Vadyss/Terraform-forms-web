@@ -16,6 +16,7 @@ export interface DeploymentConfig {
 
   networks: {
     lan: boolean;
+    lanIp: string;
     ipConfig: 'dhcp' | 'static';
     staticIp: string;
   }
@@ -29,6 +30,28 @@ export interface DeploymentConfig {
     password: string;
     sftp: boolean;
   }
+}
+
+export interface ValidationErrors {
+  networkConnection?: {
+    name?: string;
+    subnet?: string;
+  };
+  virtualMachine?: {
+    name?: string;
+    os?: string;
+  };
+  networks?: {
+    lanIp?: string;
+    staticIp?: string;
+  };
+  guacamole?: {
+    os?: string;
+    type?: string;
+    keyboardLayout?: string;
+    username?: string;
+    password?: string;
+  };
 }
 
 export type JobStatus =

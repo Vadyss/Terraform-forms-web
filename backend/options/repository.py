@@ -31,7 +31,7 @@ class StaticOptionsRepository(OptionsRepository):
                 {"value": 3, "label": "3 GB"},
                 {"value": 4, "label": "4 GB"},
                 {"value": 5, "label": "5 GB"},
-                {"value": 7, "label": "6 GB"},
+                {"value": 6, "label": "6 GB"},
                 {"value": 7, "label": "7 GB"},
                 {"value": 8, "label": "8 GB"},
             ],

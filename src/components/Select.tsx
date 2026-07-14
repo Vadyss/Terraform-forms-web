@@ -7,7 +7,7 @@ interface SelectProps {
 
 export function Select( {value, onChange, options, label}: SelectProps) {
     return (
-        <label>
+        <label className="select-field">
             {label}
             <select value={value} onChange={(e) => onChange(e.target.value)}>
             {options.map((opt) => (
