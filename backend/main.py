@@ -57,6 +57,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from options.repository import options_repository
 from jobs.repository import JobStoreFullError, job_repository
@@ -246,3 +247,10 @@ async def destroy_deployment(job_id: str):
     job = await job_repository.update(job_id, status="destroying")
     asyncio.create_task(run_destroy(job_id))
     return job
+
+# Servíruje zbuilděný frontend (npm run build → ../dist).
+# Musí být připojené AŽ NAKONEC, aby /api/* routy výše měly přednost.
+# Guard: backend nastartuje i v devu, než je frontend zbuilděný.
+_FRONTEND_DIST = Path(__file__).resolve().parent.parent / "dist"
+if _FRONTEND_DIST.is_dir():
+    app.mount("/", StaticFiles(directory=str(_FRONTEND_DIST), html=True), name="frontend")
