@@ -49,7 +49,7 @@ export function JobStatusView({ jobId, onBackToDeployments }: JobStatusViewProps
         return <Destroyed onBackToDeployments={onBackToDeployments} />;
       default:
         return null;
-    }
+    } 
   };
 
   return (

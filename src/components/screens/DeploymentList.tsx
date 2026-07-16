@@ -95,6 +95,10 @@ export function DeploymentList({ onSelectJob }: DeploymentListProps) {
             >
             <div className="job-card-body">
               <div className="job-card-field">
+                <span className="job-card-label">Stav</span>
+                <span>{STATUS_LABEL[job.status]}</span>
+              </div>
+              <div className="job-card-field">
                 <span className="job-card-label">VM</span>
                 <span>{job.config.virtualMachine.name}</span>
               </div>
