@@ -113,10 +113,6 @@ export function DeploymentList({ onSelectJob }: DeploymentListProps) {
                 </span>
               </div>
               <div className="job-card-field">
-                <span className="job-card-label">Síť</span>
-                <span>{job.config.networkConnection.name}</span>
-              </div>
-              <div className="job-card-field">
                 <span className="job-card-label">IP</span>
                 <span>{job.outputs?.ip || '—'}</span>
               </div>

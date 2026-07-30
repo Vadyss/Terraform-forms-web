@@ -1,4 +1,4 @@
-import type { DeploymentConfig, ValidationErrors } from "../../types";
+/*import type { DeploymentConfig, ValidationErrors } from "../../types";
 import { Toggle } from "../Toggle";
 
 interface NetworkConnectionSectionProps {
@@ -48,3 +48,4 @@ export function NetworkConnectionSection({ value, onChange, errors }: NetworkCon
     </div>
   );
 }
+  */
