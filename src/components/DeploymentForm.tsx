@@ -10,14 +10,6 @@ interface DeploymentFormProps {
 function validateConfig(config: DeploymentConfig): ValidationErrors {
   const errors: ValidationErrors = {};
 
-  const networkConnection: NonNullable<ValidationErrors['networkConnection']> = {};
-  if (config.networkConnection.name.trim() === '') {
-    networkConnection.name = 'Povinné pole';
-  }
-  if (Object.keys(networkConnection).length > 0) {
-    errors.networkConnection = networkConnection;
-  }
-
   const virtualMachine: NonNullable<ValidationErrors['virtualMachine']> = {};
   if (config.virtualMachine.name.trim() === '') {
     virtualMachine.name = 'Povinné pole';
@@ -29,39 +21,6 @@ function validateConfig(config: DeploymentConfig): ValidationErrors {
     errors.virtualMachine = virtualMachine;
   }
 
-  const networks: NonNullable<ValidationErrors['networks']> = {};
-  if (config.networks.lan && config.networks.lanIp.trim() === '') {
-    networks.lanIp = 'Povinné pole';
-  }
-  if (config.networks.ipConfig === 'static' && config.networks.staticIp.trim() === '') {
-    networks.staticIp = 'Povinné pole';
-  }
-  if (Object.keys(networks).length > 0) {
-    errors.networks = networks;
-  }
-
-  if (config.guacamole.enabled) {
-    const guacamole: NonNullable<ValidationErrors['guacamole']> = {};
-    if (config.guacamole.os.trim() === '') {
-      guacamole.os = 'Vyberte operační systém';
-    }
-    if (config.guacamole.type.trim() === '') {
-      guacamole.type = 'Vyberte typ prostředí';
-    }
-    if (config.guacamole.keyboardLayout.trim() === '') {
-      guacamole.keyboardLayout = 'Vyberte rozložení klávesnice';
-    }
-    if (config.guacamole.username.trim() === '') {
-      guacamole.username = 'Povinné pole';
-    }
-    if (config.guacamole.password.trim() === '') {
-      guacamole.password = 'Povinné pole';
-    }
-    if (Object.keys(guacamole).length > 0) {
-      errors.guacamole = guacamole;
-    }
-  }
-
   return errors;
 }
 
@@ -70,10 +29,7 @@ export function DeploymentForm({ onJobCreated }: DeploymentFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [config, setConfig] = useState<DeploymentConfig>({
-    networkConnection: { name: '', subnet: '', portSecurity: false, internet: false },
-    virtualMachine: { name: '', os: '', cpu: 2, ram: 4, disk: 40 },
-    networks: { lan: false, lanIp: '', ipConfig: 'dhcp', staticIp: '' },
-    guacamole: { enabled: false, os: '', type: '', keyboardLayout: '', username: '', password: '', sftp: false },
+    virtualMachine: { name: '', os: '', cpu: 2, ram: 4, disk: 40 }
   });
 
   function updateSection<K extends keyof DeploymentConfig>(
