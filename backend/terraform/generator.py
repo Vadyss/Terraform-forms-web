@@ -40,9 +40,6 @@ def write_main_tf(job_dir: Path, config: DeploymentConfig) -> Path:
     job_dir.mkdir(parents=True, exist_ok=True)
 
     vm = config.virtualMachine
-    net_conn = config.networkConnection
-    networks = config.networks
-    guac = config.guacamole
 
     command = (
         f"echo Deploying VM {json.dumps(vm.name)} "
@@ -62,28 +59,13 @@ terraform {{
 
 resource "null_resource" "deployment" {{
   triggers = {{
-    network_name    = {json.dumps(net_conn.name)}
-    network_subnet  = {json.dumps(net_conn.subnet)}
-    port_security   = {json.dumps(str(net_conn.portSecurity))}
-    internet        = {json.dumps(str(net_conn.internet))}
 
     vm_name         = {json.dumps(vm.name)}
     vm_os           = {json.dumps(vm.os)}
     vm_cpu          = {json.dumps(str(vm.cpu))}
     vm_ram          = {json.dumps(str(vm.ram))}
     vm_disk         = {json.dumps(str(vm.disk))}
-
-    lan_enabled     = {json.dumps(str(networks.lan))}
-    lan_ip          = {json.dumps(networks.lanIp)}
-    ip_config       = {json.dumps(networks.ipConfig)}
-    static_ip       = {json.dumps(networks.staticIp)}
-
-    guac_enabled    = {json.dumps(str(guac.enabled))}
-    guac_os         = {json.dumps(guac.os)}
-    guac_type       = {json.dumps(guac.type)}
-    guac_keyboard   = {json.dumps(guac.keyboardLayout)}
-    guac_username   = {json.dumps(guac.username)}
-    guac_sftp       = {json.dumps(str(guac.sftp))}
+    
   }}
 
   provisioner "local-exec" {{

@@ -53,7 +53,7 @@ def _validate_optional_ip(value: str, field_name: str) -> str:
         raise ValueError(f"{field_name} must be a valid IP address")
     return stripped
 
-
+"""
 class NetworkConnection(BaseModel):
     name: str
     subnet: str
@@ -64,7 +64,7 @@ class NetworkConnection(BaseModel):
     @classmethod
     def _validate_fields(cls, value: str, info) -> str:
         return _validate_safe_value(value, info.field_name)
-
+"""
 
 class VirtualMachine(BaseModel):
     name: str
@@ -78,7 +78,7 @@ class VirtualMachine(BaseModel):
     def _validate_fields(cls, value: str, info) -> str:
         return _validate_safe_value(value, info.field_name)
 
-
+"""
 class Networks(BaseModel):
     lan: bool
     lanIp: str = ""
@@ -89,8 +89,9 @@ class Networks(BaseModel):
     @classmethod
     def _validate_ips(cls, value: str, info) -> str:
         return _validate_optional_ip(value, info.field_name)
+"""
 
-
+"""
 class Guacamole(BaseModel):
     enabled: bool
     os: str = ""
@@ -119,13 +120,11 @@ class Guacamole(BaseModel):
                 f"password must be {_MAX_PASSWORD_LENGTH} characters or fewer"
             )
         return value
+"""
 
 
 class DeploymentConfig(BaseModel):
-    networkConnection: NetworkConnection
     virtualMachine: VirtualMachine
-    networks: Networks
-    guacamole: Guacamole
 
 
 class JobPlan(BaseModel):
