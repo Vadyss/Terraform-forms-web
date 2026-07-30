@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { NetworkConnectionSection } from './sections/NetworkConnectionSection';
 import { VirtualMachineSection } from './sections/VirtualMachineSection';
-import { NetworkSection } from './sections/NetworkSection';
-import { GuacamoleSection } from './sections/GuacamoleSection';
 import type { DeploymentConfig, ValidationErrors } from '../types';
 
 interface DeploymentFormProps {
@@ -122,26 +119,10 @@ export function DeploymentForm({ onJobCreated }: DeploymentFormProps) {
       <div className="form-header">
         <h2>Nový deployment</h2>
       </div>
-
-        <NetworkConnectionSection
-          value={config.networkConnection}
-          onChange={(updates) => updateSection('networkConnection', updates)}
-          errors={errors.networkConnection}
-        />
         <VirtualMachineSection
           value={config.virtualMachine}
           onChange={(updates) => updateSection('virtualMachine', updates)}
           errors={errors.virtualMachine}
-        />
-        <NetworkSection
-          value={config.networks}
-          onChange={(updates) => updateSection('networks', updates)}
-          errors={errors.networks}
-        />
-        <GuacamoleSection
-          value={config.guacamole}
-          onChange={(updates) => updateSection('guacamole', updates)}
-          errors={errors.guacamole}
         />
 
 

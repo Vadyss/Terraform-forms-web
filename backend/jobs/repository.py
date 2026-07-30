@@ -14,9 +14,6 @@ from typing import Optional
 
 from jobs.store import Job
 
-# Security audit finding: the in-memory store had no upper bound, so a
-# client could create unlimited jobs and grow memory usage without limit.
-# Fixed with a hard cap; create() now rejects new jobs once it's reached.
 MAX_JOBS = 1000
 
 

@@ -18,17 +18,6 @@ JobStatus = Literal[
     "destroyed",
 ]
 
-# Security audit finding: DeploymentConfig fields were free-form strings with
-# no length limit, and were interpolated (via json.dumps) into both an HCL
-# string literal and a shell command run by Terraform's local-exec
-# provisioner. json.dumps only escapes JSON/HCL string syntax - it does not
-# neutralize Terraform's `${...}` interpolation or shell metacharacters like
-# `$`, backticks, `;`, `|`, quotes, which the provisioner's shell interprets.
-# An unsanitized field (e.g. name = '$(rm -rf /)' or '${file("/etc/passwd")}')
-# would therefore be a command/template injection vector. Fixed with a strict
-# allowlist below: only alphanumerics, spaces, `.`, `_`, `-` are permitted,
-# which rules out every character needed for shell or HCL interpolation
-# injection, plus explicit length/emptiness/path-traversal checks.
 _MAX_FIELD_LENGTH = 100
 _MAX_PASSWORD_LENGTH = 200
 _SAFE_VALUE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 ._-]*$")
