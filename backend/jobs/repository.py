@@ -12,11 +12,6 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from jobs.store import Job
-
-MAX_JOBS = 1000
-
-
 class JobStoreFullError(RuntimeError):
     """Raised when a repository has reached its capacity (e.g. MAX_JOBS)."""
 

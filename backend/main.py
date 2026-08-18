@@ -12,10 +12,15 @@ import os
 import uuid
 from pathlib import Path
 
+import requests
+from dotenv import load_dotenv
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from proxmox.repository import proxmox_get_status
+from proxmox.repository import proxmox_get_vmid
 from options.repository import options_repository
 from jobs.repository import JobStoreFullError, job_repository
 from jobs.store import DeploymentConfig, Job
@@ -71,6 +76,13 @@ def _require_valid_job_id(job_id: str) -> None:
     except ValueError:
         raise HTTPException(status_code=404, detail="Job not found")
 
+@app.get("/api/proxmox/status")
+def get_status():
+    return proxmox_get_status()
+
+@app.get("/api/proxmox/vmid/next")
+def get_vmid():
+    return proxmox_get_vmid()
 
 # SECURITY: see the audit note above app.add_middleware(...) - insert an
 # auth dependency (e.g. `current_user: User = Depends(require_auth)`) as a
