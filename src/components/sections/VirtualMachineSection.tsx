@@ -57,6 +57,15 @@ export function VirtualMachineSection({ value, onChange, errors }: VirtualMachin
           onChange={(v) => onChange({ disk: Number(v) })}
         />
       </div>
+
+      <div className="form-group">
+        <label>SSH klíč</label>
+        <input
+          value={value.sshkey}
+          onChange={(e) => onChange({ sshkey: e.target.value })}
+        />
+        {errors?.sshkey && <span className="field-error">{errors.sshkey}</span>}
+      </div>
     </div>
   );
 }

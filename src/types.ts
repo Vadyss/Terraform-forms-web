@@ -6,6 +6,7 @@ export interface DeploymentConfig {
     cpu: number;
     ram: number;
     disk: number;
+    sshkey: string;
   }
 }
 
@@ -13,6 +14,7 @@ export interface ValidationErrors {
   virtualMachine?: {
     name?: string;
     os?: string;
+    sshkey?: string;
   };
 }
 

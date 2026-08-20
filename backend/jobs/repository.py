@@ -8,9 +8,15 @@ implementation. To back this with a real database, implement
 """
 from __future__ import annotations
 
+import os
+from dotenv import load_dotenv
+
 import asyncio
 from abc import ABC, abstractmethod
 from typing import Optional
+
+load_dotenv()
+MAX_JOBS = int(os.getenv("MAX_JOBS", 100))
 
 class JobStoreFullError(RuntimeError):
     """Raised when a repository has reached its capacity (e.g. MAX_JOBS)."""
