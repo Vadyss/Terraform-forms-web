@@ -41,6 +41,7 @@ class VirtualMachine(BaseModel):
     cpu: int = Field(ge=1, le=128)
     ram: int = Field(ge=1, le=1024)
     disk: int = Field(ge=1, le=10000)
+    sshkey: str
     
     @field_validator("name")
     @classmethod

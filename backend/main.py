@@ -27,22 +27,12 @@ from jobs.store import DeploymentConfig, Job
 
 _DEFAULT_ALLOWED_ORIGINS = ["http://localhost:5173"]
 
-_TEMPLATE_IDS = {"ubuntu-22.04": 9001, "debian-12": 9000}
-
-def _validate_os_value(value: str) -> int:
-    """Validation for OS values, so users can clone only templates and not other people VMs"""
-    try:
-        return _TEMPLATE_IDS[value]
-    except KeyError:
-        raise ValueError(f"{value} is not a valid value")
-
 def _allowed_origins() -> list[str]:
     raw = os.environ.get("ALLOWED_ORIGINS")
     if not raw:
         return _DEFAULT_ALLOWED_ORIGINS
     origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
     return origins or _DEFAULT_ALLOWED_ORIGINS
-
 
 app = FastAPI()
 
