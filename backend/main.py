@@ -15,15 +15,17 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from proxmox.repository import proxmox_clone
 from proxmox.repository import proxmox_get_status
 from proxmox.repository import proxmox_get_vmid
 from options.repository import options_repository
 from jobs.repository import JobStoreFullError, job_repository
 from jobs.store import DeploymentConfig, Job
+from jobs.processor import process_job
 
 _DEFAULT_ALLOWED_ORIGINS = ["http://localhost:5173"]
 
@@ -70,6 +72,10 @@ def _require_valid_job_id(job_id: str) -> None:
 def get_status():
     return proxmox_get_status()
 
+@app.post("/api/proxmox/clone")
+def clone():
+    return proxmox_clone()
+
 @app.get("/api/proxmox/vmid/next")
 def get_vmid():
     return proxmox_get_vmid()
@@ -78,15 +84,15 @@ def get_vmid():
 # auth dependency (e.g. `current_user: User = Depends(require_auth)`) as a
 # parameter on each route below once authentication is implemented.
 @app.post("/api/deployments", status_code=201)
-async def create_deployment(config: DeploymentConfig):
+async def create_deployment(config: DeploymentConfig, background_tasks: BackgroundTasks):
     job_id = str(uuid.uuid4())
     job = Job(id=job_id, status="applying", config=config)
     try:
         await job_repository.create(job)
+        background_tasks.add_task(process_job, job_id)
     except JobStoreFullError:
         raise HTTPException(status_code=503, detail="Service is at capacity, try again later")
     return {"id": job_id}
-
 
 @app.get("/api/deployments", response_model=list[Job], response_model_exclude_none=True)
 async def list_deployments():
