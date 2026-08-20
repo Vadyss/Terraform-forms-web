@@ -15,7 +15,6 @@ from typing import Optional
 class JobStoreFullError(RuntimeError):
     """Raised when a repository has reached its capacity (e.g. MAX_JOBS)."""
 
-
 class JobRepository(ABC):
     """Abstract job storage. Implement this against a real DB to replace
     InMemoryJobRepository - every method is async so a DB-backed

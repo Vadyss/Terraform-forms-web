@@ -8,20 +8,25 @@ TOKEN_SECRET = os.getenv("PROXMOX_TOKEN_SECRET")
 PROXMOX_NODE = os.getenv("PROXMOX_NODE")
 
 def proxmox_get_status():
-    url = f"https://192.168.16.201:8006/api2/json/nodes/{PROXMOX_NODE}/status"
+    url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/status"
     headers = {
         "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
         }
-    response = requests.get(url, headers=headers, verify=False)
+    try:
+        response = requests.get(url, headers=headers, verify=False, timeout=5)
+    except requests.exceptions.RequestException:
+        raise ValueError("Timeout after 5s")
     
     return response.json()["data"]
 
 def proxmox_get_vmid():
-    url = "https://192.168.16.201:8006/api2/json/cluster/nextid"
+    url = "https://172.20.10.3:8006/api2/json/cluster/nextid"
     headers = {
         "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
     }
-    response = requests.get(url, headers=headers, verify=False)
-    data_json = response.json()
+    try:
+        response = requests.get(url, headers=headers, verify=False, timeout=5)
+    except requests.exceptions.RequestException:
+        raise ValueError("Timeout after 5s")
     
-    return data_json["data"]
+    return response.json()["data"]

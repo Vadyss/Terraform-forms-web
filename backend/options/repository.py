@@ -2,12 +2,6 @@ from abc import ABC, abstractmethod
 
 from proxmox.repository import proxmox_get_status
 
-status = proxmox_get_status()
-
-max_ram = status["memory"]["available"]   # bajty, kolik RAM je reálně volných
-max_cpu = status["cpuinfo"]["cpus"]       # počet dostupných jader/vCPU
-max_disk = status["rootfs"]["avail"]      # bajty, kolik místa na disku zbývá
-
 class OptionsRepository(ABC):
     
     @abstractmethod
@@ -23,11 +17,11 @@ class StaticOptionsRepository(OptionsRepository):
         max_disk = status["rootfs"]["avail"] // (1024 ** 3)      # v GB
         
         all_cpu_options = [
-            {"value": v, "label": f"{v} vCPU"} for v in range(1, 11)
+            {"value": v, "label": f"{v} vCPU"} for v in range(1, 12)
         ]
 
         all_ram_options = [
-            {"value": v * 1024, "label": f"{v} GB"} for v in [1, 2, 4, 8, 16, 32, 64]
+            {"value": v * 1024, "label": f"{v} GB"} for v in range(1, 128)
         ]
 
         all_disk_options = [
