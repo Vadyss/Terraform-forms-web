@@ -17,6 +17,7 @@ async def process_job(job_id: str):
     new_vmid = proxmox_get_vmid()
     
     upid = proxmox_clone(template_vmid,new_vmid,vm_config.name)
+    print(f"UPID: {upid}")
     
     # TODO krok 9: wait for clone task
     # TODO krok 10: configure CPU/RAM/disk/cloud-init

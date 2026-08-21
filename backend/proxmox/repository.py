@@ -2,6 +2,8 @@ import os
 import requests
 from dotenv import load_dotenv
 
+import time
+
 load_dotenv()
 TOKEN_ID = os.getenv("PROXMOX_TOKEN_ID")
 TOKEN_SECRET = os.getenv("PROXMOX_TOKEN_SECRET")
@@ -36,14 +38,25 @@ def proxmox_wait_for_task(upid):
     headers = {
         "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
         }
+    
     try:
-        response = requests.post(url, headers=headers, verify=False, timeout=5)
+        response = requests.get(url, headers=headers, verify=False, timeout=5)
+        time.sleep(2)
     except requests.exceptions.RequestException:
         raise ValueError("Timeout after 5s")
     
-    return response.json()["data"]
+    while response.json()["data"]["status"] == "running":
+        try:
+            response = requests.get(url, headers=headers, verify=False, timeout=5)
+            time.sleep(2)
+        except requests.exceptions.RequestException:
+            raise ValueError("Timeout after 5s")
+        
+    if response.json()["data"]["exitstatus"] == "OK":
+        return response.json()["data"]["exitstatus"]
+    else:
+        raise ValueError("Template cloning failed.")
     
-
 def proxmox_get_task_status(task_id):
     url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/tasks/{task_id}/status"
     headers = {
