@@ -1,8 +1,11 @@
 from proxmox.repository import proxmox_get_vmid
 from proxmox.repository import proxmox_clone
+from proxmox.repository import proxmox_wait_for_task
+from proxmox.repository import proxmox_set_options
 from jobs.repository import job_repository
 
 _TEMPLATE_IDS = {"debian-12": 9000, "ubuntu-22.04": 9001}
+ciuser = "admin"
 
 async def process_job(job_id: str):
     job = await job_repository.get(job_id)
@@ -19,8 +22,9 @@ async def process_job(job_id: str):
     upid = proxmox_clone(template_vmid,new_vmid,vm_config.name)
     print(f"UPID: {upid}")
     
-    # TODO krok 9: wait for clone task
-    # TODO krok 10: configure CPU/RAM/disk/cloud-init
+    proxmox_wait_for_task(upid)
+    
+    proxmox_set_options(new_vmid, vm_config.cpu, vm_config.ram, vm_config.sshkey, ciuser)
     # TODO krok 11: start
     # TODO krok 12: wait for start task
     # TODO krok 13: update job status (done/error)
