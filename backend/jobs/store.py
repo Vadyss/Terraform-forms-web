@@ -39,7 +39,7 @@ class VirtualMachine(BaseModel):
     name: str
     os: Literal["ubuntu-22.04", "debian-12"]
     cpu: int = Field(ge=1, le=128)
-    ram: int = Field(ge=1, le=1024)
+    ram: int = Field(ge=1, le=131072)
     disk: int = Field(ge=1, le=10000)
     sshkey: str
     

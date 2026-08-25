@@ -3,6 +3,7 @@ import requests
 from dotenv import load_dotenv
 
 import time
+from urllib.parse import quote
 
 load_dotenv()
 TOKEN_ID = os.getenv("PROXMOX_TOKEN_ID")
@@ -62,13 +63,37 @@ def proxmox_wait_for_task(upid):
     else:
         raise ValueError("Template cloning failed.")
 
-def proxmox_set_options(new_vmid, cores, memory, sshkey, ciuser):
-    url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/qemu/{new_vmid}/config"
+def proxmox_set_options(vmid, cores, memory, sshkeys, ciuser):
+    url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/qemu/{vmid}/config"
     headers = {
         "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
         }
     try:
-        response = requests.post(url, headers=headers, data={"cores": cores, "memory": memory, "sshkey": sshkey, "ciuser": ciuser}, verify=False, timeout=5)
+        response = requests.post(url, headers=headers, data={"cores": cores, "memory": memory, "sshkeys": quote(sshkeys), "ciuser": ciuser}, verify=False, timeout=5)
+        if response.status_code != 200:
+            raise ValueError(f"Proxmox config failed: {response.status_code} {response.text}")
+    except requests.exceptions.RequestException:
+        raise ValueError("Timeout after 5s")
+    
+    return response.json()["data"]
+
+def proxmox_set_disk(vmid, disk_size, new_disk_size):
+    url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/qemu/{vmid}/resize"
+    headers = {
+        "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
+        }
+    
+    set_disk_size = new_disk_size - disk_size
+    
+    if set_disk_size > 0:
+        set_disk_size = "+" + f"{set_disk_size}" + "G"
+    else:
+        set_disk_size = f"{set_disk_size}" + "G"
+    
+    try:
+        response = requests.put(url, headers=headers, data={"disk": "scsi0", "size": set_disk_size}, verify=False, timeout=5)
+        if response.status_code != 200:
+            raise ValueError(f"Proxmox config failed: {response.status_code} {response.text}")
     except requests.exceptions.RequestException:
         raise ValueError("Timeout after 5s")
     
