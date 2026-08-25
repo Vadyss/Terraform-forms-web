@@ -31,8 +31,8 @@ async def process_job(job_id: str):
     try:
         if vm_config.disk > template_disk:
             proxmox_set_disk(new_vmid, template_disk, vm_config.disk)
-    except ValueError:
-        pass
+    except ValueError as e:
+        print(f"Disk error: {e}")
     
     # TODO krok 11: start
     # TODO krok 12: wait for start task
