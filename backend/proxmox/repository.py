@@ -69,7 +69,7 @@ def proxmox_set_options(vmid, cores, memory, sshkeys, ciuser):
         "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
         }
     try:
-        response = requests.post(url, headers=headers, data={"cores": cores, "memory": memory, "sshkeys": quote(sshkeys), "ciuser": ciuser}, verify=False, timeout=5)
+        response = requests.post(url, headers=headers, data={"cores": cores, "memory": memory, "sshkeys": quote(sshkeys, safe=""), "ciuser": ciuser}, verify=False, timeout=5)
         if response.status_code != 200:
             raise ValueError(f"Proxmox config failed: {response.status_code} {response.text}")
     except requests.exceptions.RequestException:
@@ -98,6 +98,52 @@ def proxmox_set_disk(vmid, disk_size, new_disk_size):
         raise ValueError("Timeout after 5s")
     
     return response.json()["data"]
+
+def proxmox_start(vmid):
+    url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/qemu/{vmid}/status/start"
+    headers = {
+        "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
+        }
+    try:
+        response = requests.post(url, headers=headers, verify=False, timeout=5)
+        if response.status_code != 200:
+            raise ValueError(f"Proxmox config failed: {response.status_code} {response.text}")
+    except requests.exceptions.RequestException:
+        raise ValueError("Timeout after 5s")
+    
+    return response.json()["data"]
+
+def proxmox_get_ip(vmid):
+    url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/qemu/{vmid}/agent/network-get-interfaces"
+    headers = {
+        "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
+        }
+    try:
+        response = requests.get(url, headers=headers, verify=False, timeout=5)
+        print(response.status_code)
+    except requests.exceptions.RequestException:
+        raise ValueError("Timeout after 5s")
+    
+    data = response.json()["data"]["result"]
+    
+    for interface in data:
+        if interface["name"] != "lo":
+            for ip in interface["ip-addresses"]:
+                if ip["ip-address-type"] == "ipv4":
+                    return ip["ip-address"]
+
+def proxmox_wait_for_ip(vmid):
+    attempts = 0
+    while attempts < max_attempts:
+        try:
+            ip = proxmox_get_ip(vmid)
+            if ip:
+                return ip
+        except ValueError:
+            pass
+        attempts += 1
+        time.sleep(15)
+    raise ValueError("Could not get VM IP after multiple attempts")
 
 def proxmox_get_task_status(task_id):
     url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/tasks/{task_id}/status"
