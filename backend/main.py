@@ -22,6 +22,9 @@ from fastapi.staticfiles import StaticFiles
 from proxmox.repository import proxmox_clone
 from proxmox.repository import proxmox_get_status
 from proxmox.repository import proxmox_get_vmid
+from proxmox.repository import proxmox_start
+from proxmox.repository import proxmox_stop
+from proxmox.repository import proxmox_wait_for_task
 from options.repository import options_repository
 from jobs.repository import JobStoreFullError, job_repository
 from jobs.store import DeploymentConfig, Job
@@ -58,7 +61,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 def _require_valid_job_id(job_id: str) -> None:
     """Defense-in-depth: job ids are always server-generated uuid4 values.
     Reject anything that isn't a well-formed UUID before it can reach the
@@ -71,6 +73,25 @@ def _require_valid_job_id(job_id: str) -> None:
 # SECURITY: see the audit note above app.add_middleware(...) - insert an
 # auth dependency (e.g. `current_user: User = Depends(require_auth)`) as a
 # parameter on each route below once authentication is implemented.
+
+@app.post("/api/deployment/start/{vmid}", status_code=200)
+async def start_deployment(vmid: int):
+    try:
+        start = proxmox_start(vmid)
+        result = proxmox_wait_for_task(start)
+        return result
+    except ValueError:
+        raise HTTPException(status_code=503, detail="Starting your VM failed.")
+
+@app.post("/api/deployment/stop/{vmid}", status_code=200)
+async def stop_deployment(vmid: int):
+    try:
+        stop = proxmox_stop(vmid)
+        result = proxmox_wait_for_task(stop)
+        return result
+    except ValueError:
+        raise HTTPException(status_code=503, detail="Stoping your VM failed.")
+
 @app.post("/api/deployments", status_code=201)
 async def create_deployment(config: DeploymentConfig, background_tasks: BackgroundTasks):
     job_id = str(uuid.uuid4())

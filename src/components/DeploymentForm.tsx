@@ -29,7 +29,7 @@ export function DeploymentForm({ onJobCreated }: DeploymentFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [config, setConfig] = useState<DeploymentConfig>({
-    virtualMachine: { name: '', os: '', cpu: 2, ram: 4, disk: 40 }
+    virtualMachine: { name: '', os: '', cpu: 2, ram: 1024, disk: 10, sshkey: '' }
   });
 
   function updateSection<K extends keyof DeploymentConfig>(

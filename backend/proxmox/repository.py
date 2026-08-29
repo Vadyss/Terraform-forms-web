@@ -61,7 +61,7 @@ def proxmox_wait_for_task(upid):
     if response.json()["data"]["exitstatus"] == "OK":
         return response.json()["data"]["exitstatus"]
     else:
-        raise ValueError("Template cloning failed.")
+        raise ValueError(f"Waiting for task failed! UPID: {upid}")
 
 def proxmox_set_options(vmid, cores, memory, sshkeys, ciuser):
     url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/qemu/{vmid}/config"
@@ -113,6 +113,20 @@ def proxmox_start(vmid):
     
     return response.json()["data"]
 
+def proxmox_stop(vmid):
+    url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/qemu/{vmid}/status/stop"
+    headers = {
+        "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
+        }
+    try:
+        response = requests.post(url, headers=headers, verify=False, timeout=5)
+        if response.status_code != 200:
+            raise ValueError(f"Proxmox config failed: {response.status_code} {response.text}")
+    except requests.exceptions.RequestException:
+        raise ValueError("Timeout after 5s")
+    
+    return response.json()["data"]
+    
 def proxmox_get_ip(vmid):
     url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/qemu/{vmid}/agent/network-get-interfaces"
     headers = {
@@ -120,7 +134,8 @@ def proxmox_get_ip(vmid):
         }
     try:
         response = requests.get(url, headers=headers, verify=False, timeout=5)
-        print(response.status_code)
+        if response.status_code != 200:
+            raise ValueError(f"Guest agent not ready: {response.status_code}")
     except requests.exceptions.RequestException:
         raise ValueError("Timeout after 5s")
     
