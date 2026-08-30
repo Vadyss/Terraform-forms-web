@@ -12,16 +12,11 @@ import os
 import uuid
 from pathlib import Path
 
-import requests
-from dotenv import load_dotenv
-
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from proxmox.repository import proxmox_clone
-from proxmox.repository import proxmox_get_status
-from proxmox.repository import proxmox_get_vmid
+from proxmox.repository import proxmox_delete
 from proxmox.repository import proxmox_start
 from proxmox.repository import proxmox_stop
 from proxmox.repository import proxmox_wait_for_task
@@ -91,6 +86,13 @@ async def stop_deployment(vmid: int):
         return result
     except ValueError:
         raise HTTPException(status_code=503, detail="Stoping your VM failed.")
+    
+@app.delete("/api/deployment/delete/{vmid}", status_code=200)
+async def delete_deployment(vmid: int):
+    try:
+        return proxmox_delete(vmid)
+    except ValueError:
+        raise HTTPException(status_code=503, detail="Deleting your VM failed.")
 
 @app.post("/api/deployments", status_code=201)
 async def create_deployment(config: DeploymentConfig, background_tasks: BackgroundTasks):

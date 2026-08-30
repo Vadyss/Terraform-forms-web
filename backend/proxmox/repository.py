@@ -107,7 +107,7 @@ def proxmox_start(vmid):
     try:
         response = requests.post(url, headers=headers, verify=False, timeout=5)
         if response.status_code != 200:
-            raise ValueError(f"Proxmox config failed: {response.status_code} {response.text}")
+            raise ValueError(f"Starting proxmox VM failed: {response.status_code} {response.text}")
     except requests.exceptions.RequestException:
         raise ValueError("Timeout after 5s")
     
@@ -121,12 +121,28 @@ def proxmox_stop(vmid):
     try:
         response = requests.post(url, headers=headers, verify=False, timeout=5)
         if response.status_code != 200:
-            raise ValueError(f"Proxmox config failed: {response.status_code} {response.text}")
+            raise ValueError(f"Stoping proxmox VM failed: {response.status_code} {response.text}")
     except requests.exceptions.RequestException:
         raise ValueError("Timeout after 5s")
     
     return response.json()["data"]
+
+def proxmox_delete(vmid):
+    url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/qemu/{vmid}"
+    headers = {
+        "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
+        }
+    try:
+        stop = proxmox_stop(vmid)
+        proxmox_wait_for_task(stop)
+        response = requests.delete(url, headers=headers, verify=False, timeout=5)
+        if response.status_code != 200:
+            raise ValueError(f"Deleting proxmox VM failed: {response.status_code} {response.text}")
+    except requests.exceptions.RequestException:
+        raise ValueError("Timeout after 5s")
     
+    return response.json()["data"]
+
 def proxmox_get_ip(vmid):
     url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/qemu/{vmid}/agent/network-get-interfaces"
     headers = {
@@ -159,18 +175,6 @@ def proxmox_wait_for_ip(vmid):
         attempts += 1
         time.sleep(15)
     raise ValueError("Could not get VM IP after multiple attempts")
-
-def proxmox_get_task_status(task_id):
-    url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/tasks/{task_id}/status"
-    headers = {
-        "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
-        }
-    try:
-        response = requests.get(url, headers=headers, verify=False, timeout=5)
-    except requests.exceptions.RequestException:
-        raise ValueError("Timeout after 5s")
-    
-    return response.json()["data"]
 
 def proxmox_get_vmid():
     url = "https://172.20.10.3:8006/api2/json/cluster/nextid"

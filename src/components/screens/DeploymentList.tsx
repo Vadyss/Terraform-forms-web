@@ -9,13 +9,9 @@ interface DeploymentListProps {
 const POLL_INTERVAL_MS = 5000;
 
 const STATUS_LABEL: Record<JobStatus, string> = {
-  planning: 'Plánování',
-  awaiting_confirmation: 'Čeká na potvrzení',
   applying: 'Aplikace',
   done: 'Hotovo',
   error: 'Chyba',
-  destroying: 'Ruší se',
-  destroyed: 'Zrušeno',
 };
 
 export function DeploymentList({ onSelectJob }: DeploymentListProps) {
@@ -86,12 +82,11 @@ export function DeploymentList({ onSelectJob }: DeploymentListProps) {
       {!isLoading && jobs.length === 0 && <p className="status-text">Žádné deploymenty.</p>}
       <div className="job-list">
         {jobs.map((job) => {
-          const isDestroyed = job.status === 'destroyed';
           return (
             <div
               key={job.id}
-              className={`job-card ${isDestroyed ? 'job-card-disabled' : ''}`}
-              onClick={() => !isDestroyed && onSelectJob(job.id)}
+              className="job-card"
+              onClick={() => onSelectJob(job.id)}
             >
             <div className="job-card-body">
               <div className="job-card-field">

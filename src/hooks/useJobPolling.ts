@@ -16,7 +16,7 @@ export function useJobPolling(jobId: string | null) {
     enabled: jobId !== null,
     refetchInterval: (query) => {
       const status = query.state.data?.status;
-      const isTerminal = status === 'done' || status === 'error' || status === 'destroyed';
+      const isTerminal = status === 'done' || status === 'error';
       return status && !isTerminal ? 2000 : false;
     },
   });

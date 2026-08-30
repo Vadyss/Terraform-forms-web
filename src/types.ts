@@ -19,18 +19,9 @@ export interface ValidationErrors {
 }
 
 export type JobStatus =
-  | 'planning'
-  | 'awaiting_confirmation'
   | 'applying'
   | 'done'
-  | 'error'
-  | 'destroying'
-  | 'destroyed';
-
-export interface JobPlan {
-  summary: string;
-  risks: string[];
-}
+  | 'error';
 
 export interface StringOption {
   value: string;
@@ -48,7 +39,6 @@ export interface GetOptions {
   ramOptions: NumberOption[];
   diskOptions: NumberOption[];
   environmentTypes: StringOption[];
-  keyboardLayouts: StringOption[];
 }
 
 export interface JobOutputs {
@@ -60,7 +50,6 @@ export interface Job {
   id: string;
   status: JobStatus;
   config: DeploymentConfig;
-  plan?: JobPlan;
   outputs?: JobOutputs;
   error?: string;
   createdAt?: string;
