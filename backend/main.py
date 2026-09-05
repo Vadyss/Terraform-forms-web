@@ -20,6 +20,7 @@ from proxmox.repository import proxmox_delete
 from proxmox.repository import proxmox_start
 from proxmox.repository import proxmox_stop
 from proxmox.repository import proxmox_wait_for_task
+from proxmox.repository import proxmox_get_vm_status
 from options.repository import options_repository
 from jobs.repository import JobStoreFullError, job_repository
 from jobs.store import DeploymentConfig, Job
@@ -93,6 +94,13 @@ async def delete_deployment(vmid: int):
         return proxmox_delete(vmid)
     except ValueError:
         raise HTTPException(status_code=503, detail="Deleting your VM failed.")
+    
+@app.get("/api/deployment/status/{vmid}", status_code=200)
+async def get_vm_status(vmid: int):
+    try: 
+        return proxmox_get_vm_status(vmid)
+    except ValueError:
+        raise HTTPException(status_code=503, detail="Getting your VM status failed.")
 
 @app.post("/api/deployments", status_code=201)
 async def create_deployment(config: DeploymentConfig, background_tasks: BackgroundTasks):

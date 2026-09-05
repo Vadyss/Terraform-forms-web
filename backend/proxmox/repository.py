@@ -187,3 +187,17 @@ def proxmox_get_vmid():
         raise ValueError("Timeout after 5s")
     
     return response.json()["data"]
+
+def proxmox_get_vm_status(vmid):
+    url = f"https://172.20.10.3:8006/api2/json/nodes/{PROXMOX_NODE}/qemu/{vmid}/status/current"
+    headers = {
+        "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
+    }
+    try:
+        response = requests.get(url, headers=headers, verify=False, timeout=5)
+        if response.status_code != 200:
+            raise ValueError(f"Getting VM status failed: {response.status_code} {response.text}")
+    except requests.exceptions.RequestException:
+        raise ValueError("Timeout after 5s")
+    
+    return response.json()["data"]

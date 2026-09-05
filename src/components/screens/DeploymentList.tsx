@@ -1,9 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
+import { Play, Square, Trash2 } from 'lucide-react';
 import type { Job, JobStatus } from '../../types';
 
 interface DeploymentListProps {
   onSelectJob: (id: string) => void;
+}
+
+type VmStatus = 'running' | 'stopped' | 'unknown';
+type JobAction = 'start' | 'stop' | 'delete';
+
+interface ConfirmTarget {
+  jobId: string;
+  resourceId: string;
+  name: string;
 }
 
 const POLL_INTERVAL_MS = 5000;
@@ -18,7 +28,12 @@ export function DeploymentList({ onSelectJob }: DeploymentListProps) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [destroyingIds, setDestroyingIds] = useState<Set<string>>(new Set());
+  const [vmStatus, setVmStatus] = useState<Record<string, VmStatus>>({});
+  const [statusLoading, setStatusLoading] = useState<Record<string, boolean>>({});
+  const [actionLoading, setActionLoading] = useState<Record<string, JobAction>>({});
+  const [actionErrors, setActionErrors] = useState<Record<string, string>>({});
+  const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget | null>(null);
+  const fetchedStatusIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -49,24 +64,108 @@ export function DeploymentList({ onSelectJob }: DeploymentListProps) {
     };
   }, []);
 
-  async function handleDestroy(e: MouseEvent, id: string) {
-    e.stopPropagation();
-    setDestroyingIds((prev) => new Set(prev).add(id));
+  useEffect(() => {
+    jobs.forEach((job) => {
+      const resourceId = job.outputs?.resourceId;
+      if (job.status !== 'done' || !resourceId) return;
+      if (fetchedStatusIds.current.has(resourceId)) return;
+      fetchedStatusIds.current.add(resourceId);
+      fetchVmStatus(resourceId);
+    });
+  }, [jobs]);
+
+  async function fetchVmStatus(resourceId: string) {
+    setStatusLoading((prev) => ({ ...prev, [resourceId]: true }));
     try {
-      const res = await fetch(`/api/deployments/${id}/destroy`, { method: 'POST' });
+      const res = await fetch(`/api/deployment/status/${resourceId}`);
       if (!res.ok) {
-        throw new Error('Zrušení se nezdařilo');
+        throw new Error('Nepodařilo se zjistit stav VM');
       }
+      const data: { status?: string } = await res.json();
+      setVmStatus((prev) => ({
+        ...prev,
+        [resourceId]: data.status === 'running' ? 'running' : 'stopped',
+      }));
+    } catch {
+      setVmStatus((prev) => ({ ...prev, [resourceId]: 'unknown' }));
+    } finally {
+      setStatusLoading((prev) => ({ ...prev, [resourceId]: false }));
+    }
+  }
+
+  async function handleToggleRun(e: MouseEvent, job: Job) {
+    e.stopPropagation();
+    const resourceId = job.outputs?.resourceId;
+    if (!resourceId) return;
+    const action: JobAction = vmStatus[resourceId] === 'running' ? 'stop' : 'start';
+    setActionLoading((prev) => ({ ...prev, [job.id]: action }));
+    setActionErrors((prev) => {
+      const next = { ...prev };
+      delete next[job.id];
+      return next;
+    });
+    try {
+      const res = await fetch(`/api/deployment/${action}/${resourceId}`, { method: 'POST' });
+      if (!res.ok) {
+        throw new Error();
+      }
+      await fetchVmStatus(resourceId);
+    } catch {
+      setActionErrors((prev) => ({
+        ...prev,
+        [job.id]: action === 'start' ? 'Spuštění se nezdařilo' : 'Zastavení se nezdařilo',
+      }));
+    } finally {
+      setActionLoading((prev) => {
+        const next = { ...prev };
+        delete next[job.id];
+        return next;
+      });
+    }
+  }
+
+  function requestDelete(e: MouseEvent, job: Job) {
+    e.stopPropagation();
+    const resourceId = job.outputs?.resourceId;
+    if (!resourceId) return;
+    setConfirmTarget({ jobId: job.id, resourceId, name: job.config.virtualMachine.name });
+  }
+
+  function cancelDelete() {
+    setConfirmTarget(null);
+  }
+
+  async function confirmDelete() {
+    if (!confirmTarget) return;
+    const { jobId, resourceId } = confirmTarget;
+    setConfirmTarget(null);
+    setActionLoading((prev) => ({ ...prev, [jobId]: 'delete' }));
+    setActionErrors((prev) => {
+      const next = { ...prev };
+      delete next[jobId];
+      return next;
+    });
+    try {
+      const res = await fetch(`/api/deployment/delete/${resourceId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        throw new Error();
+      }
+      fetchedStatusIds.current.delete(resourceId);
+      setVmStatus((prev) => {
+        const next = { ...prev };
+        delete next[resourceId];
+        return next;
+      });
       const listRes = await fetch('/api/deployments');
       if (listRes.ok) {
         setJobs(await listRes.json());
       }
     } catch {
-      setError('Nepodařilo se zrušit deployment');
+      setActionErrors((prev) => ({ ...prev, [jobId]: 'Smazání se nezdařilo' }));
     } finally {
-      setDestroyingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
+      setActionLoading((prev) => {
+        const next = { ...prev };
+        delete next[jobId];
         return next;
       });
     }
@@ -82,6 +181,15 @@ export function DeploymentList({ onSelectJob }: DeploymentListProps) {
       {!isLoading && jobs.length === 0 && <p className="status-text">Žádné deploymenty.</p>}
       <div className="job-list">
         {jobs.map((job) => {
+          const resourceId = job.outputs?.resourceId;
+          const canManage = job.status === 'done' && !!resourceId;
+          const vmState = resourceId ? vmStatus[resourceId] : undefined;
+          const isStatusLoading = resourceId ? !!statusLoading[resourceId] : false;
+          const runningAction = actionLoading[job.id];
+          const isToggleBusy = isStatusLoading || runningAction === 'start' || runningAction === 'stop';
+          const isDeleteBusy = runningAction === 'delete';
+          const isRunning = vmState === 'running';
+
           return (
             <div
               key={job.id}
@@ -116,14 +224,44 @@ export function DeploymentList({ onSelectJob }: DeploymentListProps) {
                 <span className="job-card-time">
                   {job.createdAt ? new Date(job.createdAt).toLocaleString() : ''}
                 </span>
-                {job.status === 'done' && (
-                  <button
-                    className="job-destroy-btn"
-                    onClick={(e) => handleDestroy(e, job.id)}
-                    disabled={destroyingIds.has(job.id)}
-                  >
-                    Zrušit
-                  </button>
+                {canManage && (
+                  <div className="job-card-footer-end">
+                    <div className="job-card-actions">
+                      <button
+                        type="button"
+                        className={`job-icon-btn ${isRunning ? 'job-icon-btn-stop' : 'job-icon-btn-start'}`}
+                        onClick={(e) => handleToggleRun(e, job)}
+                        disabled={isToggleBusy || vmState === undefined}
+                        title={isRunning ? 'Zastavit VM' : 'Spustit VM'}
+                        aria-label={isRunning ? 'Zastavit VM' : 'Spustit VM'}
+                      >
+                        {isToggleBusy ? (
+                          <span className="job-icon-spinner" aria-hidden="true" />
+                        ) : isRunning ? (
+                          <Square size={16} aria-hidden="true" />
+                        ) : (
+                          <Play size={16} aria-hidden="true" />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        className="job-icon-btn job-icon-btn-danger"
+                        onClick={(e) => requestDelete(e, job)}
+                        disabled={isDeleteBusy}
+                        title="Smazat VM"
+                        aria-label="Smazat VM"
+                      >
+                        {isDeleteBusy ? (
+                          <span className="job-icon-spinner" aria-hidden="true" />
+                        ) : (
+                          <Trash2 size={16} aria-hidden="true" />
+                        )}
+                      </button>
+                    </div>
+                    {actionErrors[job.id] && (
+                      <span className="job-action-error">{actionErrors[job.id]}</span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -131,6 +269,22 @@ export function DeploymentList({ onSelectJob }: DeploymentListProps) {
         })}
       </div>
       {error && <p className="form-error">{error}</p>}
+      {confirmTarget && (
+        <div className="confirm-overlay" onClick={cancelDelete}>
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Smazat VM</h3>
+            <p>Opravdu smazat VM {confirmTarget.name}?</p>
+            <div className="confirm-modal-actions">
+              <button type="button" className="confirm-cancel-btn" onClick={cancelDelete}>
+                Zrušit
+              </button>
+              <button type="button" className="confirm-delete-btn" onClick={confirmDelete}>
+                Smazat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

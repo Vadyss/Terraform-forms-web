@@ -12,6 +12,8 @@ import os
 from dotenv import load_dotenv
 
 import asyncio
+import json
+from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -42,6 +44,26 @@ class JobRepository(ABC):
     async def update(self, job_id: str, **fields) -> Optional[Job]:
         """Apply a partial update to a job and return the updated job, or
         None if it doesn't exist."""
+
+class FileJobRepository(JobRepository):
+    
+    def __init__(self) -> None:
+        if os.path.exists("../deployments/vm.json"):
+            with open("../deployments/vm.json", "r") as f:    
+                raw_data = json.load(f) 
+                self._jobs = {job_id: Job(**data) for job_id, data in raw_data.items()}
+        else:
+            self._jobs = {}
+        self._lock = asyncio.Lock()
+        
+    async def create(self, job: Job) -> None:
+        async with self._lock:
+            if len(self._jobs) >= MAX_JOBS:
+                raise JobStoreFullError(f"job store has reached its capacity of {MAX_JOBS}")
+            self._jobs[job.id] = job
+            data = {job_id: job.model_dump() for job_id, job in self._jobs.items()}
+            with open("../deployments/vm.json", "w") as f:
+                json.dump(data, f)
 
 class InMemoryJobRepository(JobRepository):
     """Default in-process implementation, keyed by job id in a dict."""
